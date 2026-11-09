@@ -38,12 +38,12 @@ else:
 NCX = int(DOM_W / D_EFF) + 1              # número de celdas en X
 NCY = int(DOM_H / D_EFF) + 1              # número de celdas en Y
 
-MC_STEPS = 500000                         # pasos del MC    
-imp_steps = 20000                         # pasos entre impresiones de progreso
+MC_STEPS = 50000                         # pasos del MC    
+imp_steps = 10000                         # pasos entre impresiones de progreso
 
 
 # funciones de geometría y topología
-@njit(fastmath=True)
+@njit(fastmath=True, boundscheck=False, cache=True)
 def inside(x, y, L, topology):
     if topology == 0:
         if 0 <= x <= L and 0 <= y <= L: return True
@@ -53,7 +53,7 @@ def inside(x, y, L, topology):
         if 0 <= x <= 3*L and L <= y <= 2*L: return True
     return False
 
-@njit(fastmath=True)
+@njit(fastmath=True, boundscheck=False, cache=True)
 def PBC(old_x, old_y, new_x, new_y, L, topology):
     if topology == 0: return new_x % L, new_y % L
     if topology == 1:
@@ -80,7 +80,7 @@ def PBC(old_x, old_y, new_x, new_y, L, topology):
                 if new_x > 2*L: return new_y, 4*L - new_x         
         return new_x, new_y
 
-@njit(fastmath=True)
+@njit(fastmath=True, boundscheck=False, cache=True)
 def get_ghosts(x, y, L, threshold, topology):
     ghosts = np.full((14, 2), -100.0) 
     idx = 0
@@ -111,7 +111,7 @@ def get_ghosts(x, y, L, threshold, topology):
         if x > 3*L - threshold and L < y < 2*L: ghosts[idx] = (5*L - x, 5*L - y); idx+=1 
     return ghosts
 
-@njit(fastmath=True)
+@njit(fastmath=True, boundscheck=False, cache=True)
 def check_grid(px, py, x, y, D, head, next_node, ncx, ncy, ignore_idx):
     cx, cy = int(px/D), int(py/D)
     for dcx in (-1, 0, 1):
@@ -127,7 +127,7 @@ def check_grid(px, py, x, y, D, head, next_node, ncx, ncy, ignore_idx):
                     j = next_node[j]
     return False
 
-@njit(fastmath=True)
+@njit(fastmath=True, boundscheck=False, cache=True)
 def check_overlap(px, py, x, y, D, head, next_node, ncx, ncy, L, topology, ignore_idx=-1):
     if check_grid(px, py, x, y, D, head, next_node, ncx, ncy, ignore_idx): return True
     ghosts = get_ghosts(px, py, L, D, topology)
@@ -139,7 +139,7 @@ def check_overlap(px, py, x, y, D, head, next_node, ncx, ncy, L, topology, ignor
     return False
 
 #  MC e inicialización
-@njit(fastmath=True)
+@njit(fastmath=True, boundscheck=False, cache=True)
 def init_system(x, y, L, D_eff, head, next_node, ncx, ncy, topology):
     head[:] = -1
     count = 0
@@ -160,7 +160,7 @@ def init_system(x, y, L, D_eff, head, next_node, ncx, ncy, topology):
             count += 1
     return count
 
-@njit(fastmath=True)
+@njit(fastmath=True, boundscheck=False, cache=True)
 def mc_step(x, y, L, D_eff, max_disp, head, next_node, ncx, ncy, topology):
     N_total = len(x)
     accepts = 0
@@ -190,7 +190,7 @@ def mc_step(x, y, L, D_eff, max_disp, head, next_node, ncx, ncy, topology):
                 head[new_idx] = i
     return accepts / N_total
 
-@njit(fastmath=True)
+@njit(fastmath=True, boundscheck=False, cache=True)
 def compression(x, y, L, D_eff, shrink_factor, head, next_node, ncx, ncy, topology):
     old_x = x.copy()
     old_y = y.copy()
@@ -262,11 +262,11 @@ if __name__ == "__main__":
                 
             # control del MC volumétrico: transición del régimen diluido al jamming 
             if acc > 0.8:
-                SHRINK_FACTOR = 0.9999    
+                SHRINK_FACTOR = 0.99999    
             elif acc > 0.6:
-                SHRINK_FACTOR = 0.9999   
+                SHRINK_FACTOR = 0.99999   
             else:
-                SHRINK_FACTOR = 0.9999  
+                SHRINK_FACTOR = 0.99999  
 
         # densificación
         L, accepted = compression(x_pos, y_pos, L, D_EFF, SHRINK_FACTOR, head, next_node, NCX, NCY, TOPOLOGY)
