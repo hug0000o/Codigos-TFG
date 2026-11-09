@@ -280,7 +280,7 @@ if __name__ == "__main__":
     tiempos = []
 
     if MODO_ANALISIS == "PASOS":
-        particulas_fijas = 500
+        particulas_fijas = 1000
         vector_pasos = [10000, 50000, 100000, 250000, 500000]
         
         print(f"Iniciando análisis por PASOS MC (N fijo = {particulas_fijas})")
@@ -289,6 +289,13 @@ if __name__ == "__main__":
             t = correr_simulacion(N=particulas_fijas, MC_STEPS=pasos)
             tiempos.append(t)
             print(f" -> Tiempo: {t:.2f} s")
+            
+        # ==========================================
+        # CÁLCULO DE LA CONSTANTE (MODO PASOS)
+        # ==========================================
+        pendiente_pasos = np.polyfit(vector_pasos, tiempos, 1)[0]
+        k_constante = pendiente_pasos / particulas_fijas
+        print(f"\n---> Constante k: {k_constante:.2e} s/(partícula*pasoMC)\n")
             
         plt.figure(figsize=(8, 5))
         plt.plot(vector_pasos, tiempos, marker='o', linestyle='-', color='b')
@@ -308,6 +315,13 @@ if __name__ == "__main__":
             t = correr_simulacion(N=particulas, MC_STEPS=pasos_fijos)
             tiempos.append(t)
             print(f" -> Tiempo: {t:.2f} s")
+
+        # ==========================================
+        # CÁLCULO DE LA CONSTANTE (MODO PARTÍCULAS)
+        # ==========================================
+        pendiente_particulas = np.polyfit(vector_particulas, tiempos, 1)[0]
+        k_constante = pendiente_particulas / pasos_fijos
+        print(f"\n---> Constante k: {k_constante:.2e} s/(partícula*pasoMC)\n")
 
         plt.figure(figsize=(8, 5))
         plt.plot(vector_particulas, tiempos, marker='s', linestyle='-', color='r')
