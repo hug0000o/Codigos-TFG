@@ -103,7 +103,7 @@ def inside_cross_vec(px, py, L):
 
 
 # Animaciones.
-# A partir de aquí tengo que revisar bien todo porque lo he hecho directamente con Gemini (Parece estar bien y funcionar sin problemas).
+# A partir de aquí tengo que revisar bien (edit: Parece estar bien y funcionar sin problemas).
 
 """Proyección de las 6 caras planas de la cruz a los planos del cubo 3D."""
 
