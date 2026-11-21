@@ -3,9 +3,6 @@ from numba import njit
 import matplotlib.pyplot as plt
 import time
 
-# ==========================================
-# 1. FUNCIONES DE GEOMETRÍA Y TOPOLOGÍA
-# ==========================================
 @njit(fastmath=True)
 def inside(x, y, L, topology):
     if topology == 0:
@@ -101,9 +98,7 @@ def check_overlap(px, py, x, y, D, head, next_node, ncx, ncy, L, topology, ignor
                 return True
     return False
 
-# ==========================================
-# 2. MOTOR DE MONTE CARLO
-# ==========================================
+
 @njit(fastmath=True)
 def init_system(x, y, L, D_eff, head, next_node, ncx, ncy, topology):
     head[:] = -1
@@ -193,11 +188,8 @@ def compression(x, y, L, D_eff, shrink_factor, head, next_node, ncx, ncy, topolo
         
     return new_L, True  
 
-# ==========================================
-# 3. ENCAPSULACIÓN Y ANÁLISIS
-# ==========================================
+
 def correr_simulacion(N, MC_STEPS, TOPOLOGY=1):
-    """Ejecuta una simulación completa y devuelve el tiempo transcurrido."""
     D = 1.0                                   
     R = D / 2.0                               
     phi_init = 0.1                            
@@ -268,14 +260,10 @@ def correr_simulacion(N, MC_STEPS, TOPOLOGY=1):
     return time.time() - t_start
 
 if __name__ == "__main__":
-    # ==========================================
-    # SELECTOR DE MODO DE ANÁLISIS
-    # Cambia a "PASOS" o "PARTICULAS" según lo que quieras generar
-    # ==========================================
+    
     MODO_ANALISIS = "PASOS" 
     
-    print("Compilando Numba en vacío (Warm-up)...")
-    correr_simulacion(N=100, MC_STEPS=100) # Evita que el primer tiempo incluya la compilación de Numba
+    correr_simulacion(N=100, MC_STEPS=100) 
     
     tiempos = []
 
@@ -290,9 +278,7 @@ if __name__ == "__main__":
             tiempos.append(t)
             print(f" -> Tiempo: {t:.2f} s")
             
-        # ==========================================
-        # CÁLCULO DE LA CONSTANTE (MODO PASOS)
-        # ==========================================
+        
         pendiente_pasos = np.polyfit(vector_pasos, tiempos, 1)[0]
         k_constante = pendiente_pasos / particulas_fijas
         print(f"\n---> Constante k: {k_constante:.2e} s/(partícula*pasoMC)\n")
@@ -316,9 +302,6 @@ if __name__ == "__main__":
             tiempos.append(t)
             print(f" -> Tiempo: {t:.2f} s")
 
-        # ==========================================
-        # CÁLCULO DE LA CONSTANTE (MODO PARTÍCULAS)
-        # ==========================================
         pendiente_particulas = np.polyfit(vector_particulas, tiempos, 1)[0]
         k_constante = pendiente_particulas / pasos_fijos
         print(f"\n---> Constante k: {k_constante:.2e} s/(partícula*pasoMC)\n")

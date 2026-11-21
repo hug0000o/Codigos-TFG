@@ -4,9 +4,6 @@ from matplotlib.patches import Circle, Polygon
 import matplotlib.animation as animation
 from itertools import product, combinations
 
-"""Script donde he diseñado y probado si funcionan correctamente las condiciones de contorno periódicas (PBC) 
-para la cruz 2D. Como método extra de comprobación, se ha implementado la proyección 3D del sistema para
-visualizar mejor su comportamiento. """
 
 
 

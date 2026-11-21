@@ -7,7 +7,7 @@ import time
 
 # parámetros
 
-TOPOLOGY = 1                              # 0: cuadrado simple, 1: topología del cubo
+TOPOLOGY = 0                              # 0: cuadrado simple, 1: topología del cubo
 D = 1.0                                   # Diámetro de las partículas
 R = D / 2.0                               # Radio de las partículas
 N = 1000                                  # Número de partículas
@@ -22,10 +22,10 @@ else:
     L = np.sqrt(area_total / 6.0)            
     
 MAX_DISP = D / 10.0                       # desplazamiento máximo       
-GAMMA = D / 40.0                           # esfera de influencia para detección de contactos inminentes
+GAMMA = 1e-12                              # esfera de influencia para proteger contra solapamientos numéricos pequeños y evitar imprecisiones numéricas al usar el fastmath de numba
 D_EFF = D + GAMMA                         # diámetro efectivo
 
-SHRINK_FACTOR = 0.99                      # factor de contracción de la caja inicial
+SHRINK_FACTOR = 0.999                      # factor de contracción de la caja inicial
 TOL_VOL = 2.0e-12                         # criterio de parada 
 
 if TOPOLOGY == 0:
@@ -38,7 +38,7 @@ else:
 NCX = int(DOM_W / D_EFF) + 1              # número de celdas en X
 NCY = int(DOM_H / D_EFF) + 1              # número de celdas en Y
 
-MC_STEPS = 50000                         # pasos del MC    
+MC_STEPS = 500000                         # pasos del MC    
 imp_steps = 10000                         # pasos entre impresiones de progreso
 
 
@@ -253,18 +253,16 @@ if __name__ == "__main__":
     
     for step in range(MC_STEPS):
         
-        # control del MC traslacional: ajuste dinámico del desplazamiento máximo
         if step > 0:
             if acc > 0.50:
                 MAX_DISP = min(MAX_DISP * 1.05, D / 2.0)
             elif acc < 0.30:
-                MAX_DISP = max(MAX_DISP * 0.95, D / 200.0) # Restricción estricta de traslación
+                MAX_DISP = max(MAX_DISP * 0.95, D / 200.0) 
                 
-            # control del MC volumétrico: transición del régimen diluido al jamming 
-            if acc > 0.8:
-                SHRINK_FACTOR = 0.99999    
-            elif acc > 0.6:
-                SHRINK_FACTOR = 0.99999   
+            if acc > 0.6:
+                SHRINK_FACTOR = 0.999    
+            elif acc > 0.2:
+                SHRINK_FACTOR = 0.9999   
             else:
                 SHRINK_FACTOR = 0.99999  
 
@@ -320,7 +318,6 @@ if __name__ == "__main__":
     boundary_patch = Polygon(boundary_coords, closed=True, fill=False, edgecolor='black', lw=1.5, zorder=2)
     ax.add_patch(boundary_patch)
     
-    # Renderizar círculos fijos sin buffer intermedio
     for i in range(N):
         c = Circle((x_pos[i], y_pos[i]), R, color='crimson', alpha=0.9, zorder=3)
         c.set_clip_path(boundary_patch)
@@ -334,7 +331,7 @@ if __name__ == "__main__":
                 cg.set_clip_path(boundary_patch)
                 ax.add_patch(cg)
                 
-    plt.title(f"Estado Final (ϕ = {phi_final:.4f})")
+    plt.title(f"Estado Final (ϕ = {phi_final:.4f}), N={N}", fontsize=12)
     plt.axis('off')
     plt.tight_layout()
     plt.show()

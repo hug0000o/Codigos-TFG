@@ -25,11 +25,11 @@ else:
     
   
 MAX_DISP = D/10                      # desplazamiento máximo          
-GAMMA = D / 40.0                          # esfera de influencia para detección de contactos inminentes
+GAMMA = 1e-12                          # esfera de influencia para proteger contra solapamientos numéricos pequeños y evitar imprecisiones numéricas al usar el fastmath de numba
 D_EFF = D + GAMMA                         
 
 
-SHRINK_FACTOR = 0.99                      # factor de contracción de la caja inicial
+SHRINK_FACTOR = 0.999                      # factor de contracción de la caja inicial
 TOL_VOL = 2.0e-12                         # criterio de parada 
 
 
@@ -43,10 +43,10 @@ else:
 NCX = int(DOM_W / D_EFF) + 1              # número de celdas en X
 NCY = int(DOM_H / D_EFF) + 1              # número de celdas en Y
 
-MC_STEPS = 200000                           # pasos del MC
-STEPS_PER_FRAME = 2000                       # intervalo de pasos para la animacion
+MC_STEPS = 100000                           # pasos del MC
+STEPS_PER_FRAME = 100                       # intervalo de pasos para la animacion
 NUM_FRAMES = MC_STEPS // STEPS_PER_FRAME     # frames totales para la animación
-imp_steps = 20000                             # intervalo de pasos para imprimir progreso
+imp_steps = 5000                             # intervalo de pasos para imprimir progreso
 
 
 
@@ -215,19 +215,16 @@ def compression(x, y, L, D_eff, shrink_factor, head, next_node, ncx, ncy, topolo
     new_L = L * shrink_factor
     scale_ratio = new_L / L
     
-    # contraer coordenadas
     for i in range(len(x)):
         x[i] = x[i] * scale_ratio
         y[i] = y[i] * scale_ratio
         
-    # reconstruir Cell Lists con la nueva configuración
     head[:] = -1
     for i in range(len(x)):
         idx = int(x[i]/D_eff) + int(y[i]/D_eff) * ncx
         next_node[i] = head[idx]
         head[idx] = i
         
-    # comprobar solapamientos tras la compresión
     overlap = False
     for i in range(len(x)):
         if check_overlap(x[i], y[i], x, y, D_eff, head, next_node, ncx, ncy, new_L, topology, i):
@@ -235,7 +232,6 @@ def compression(x, y, L, D_eff, shrink_factor, head, next_node, ncx, ncy, topolo
             break
             
     if overlap:
-        # rechazo: restaurar coordenadas si se viola la restricción de solapamiento
         for i in range(len(x)):
             x[i] = old_x[i]
             y[i] = old_y[i]
@@ -246,9 +242,9 @@ def compression(x, y, L, D_eff, shrink_factor, head, next_node, ncx, ncy, topolo
             next_node[i] = head[idx]
             head[idx] = i
             
-        return L, False # retorna el L original y estado rechazado
+        return L, False 
         
-    return new_L, True  # retorna el L densificado y estado aceptado
+    return new_L, True  
 
 
 
@@ -272,7 +268,6 @@ if __name__ == "__main__":
     frame_idx = 0
     total_acc = 0.0
     
-    #  evaluar el criterio de parada 
     V_history = np.zeros(3, dtype=np.float64)
     def get_volume(L_val, top):
         return L_val**2 if top == 0 else 12 * L_val**2
@@ -283,28 +278,23 @@ if __name__ == "__main__":
     for step in range(MC_STEPS):
         
         if step > 0:
-            # control del MC traslacional: ajuste dinámico del desplazamiento máximo
             if acc > 0.50:
                 MAX_DISP = min(MAX_DISP * 1.05, D / 2.0)
             elif acc < 0.30:
                 MAX_DISP = max(MAX_DISP * 0.95, D / 200.0) 
                 
-            # control del MC volumétrico: transición del régimen diluido al jamming 
-            if acc > 0.8:
+            if acc > 0.6:
                 SHRINK_FACTOR = 0.99    
-            elif acc > 0.5:
+            elif acc > 0.2:
                 SHRINK_FACTOR = 0.999   
             else:
                 SHRINK_FACTOR = 0.9999  
 
-        # intento de densificación 
         L, accepted = compression(x_pos, y_pos, L, D_EFF, SHRINK_FACTOR, head, next_node, NCX, NCY, TOPOLOGY)
         
-        # relajación (MC traslacional)
         acc = mc_step(x_pos, y_pos, L, D_EFF, MAX_DISP, head, next_node, NCX, NCY, TOPOLOGY)
         total_acc += acc
         
-        # criterio de parada (strict jamming ???)
         V_history[2] = get_volume(L, TOPOLOGY)
         
         if accepted:
@@ -314,7 +304,6 @@ if __name__ == "__main__":
                 print(f"Paso: {step} | Delta V: {delta_V:.3e} < {TOL_VOL}")
                 break
                 
-        # actualizar histórico de volúmenes
         V_history[0] = V_history[1]
         V_history[1] = V_history[2]
         
@@ -376,7 +365,6 @@ if __name__ == "__main__":
         frame_y = trayectoria[frame, :, 1]
         L_actual = L_frames[frame] 
         
-        # 1. Ajustar la cámara y la cuadrícula dinámicamente al nuevo L_actual
         if TOPOLOGY == 0:
             ax.set_xlim(0, L_actual)
             ax.set_ylim(0, L_actual)
@@ -394,7 +382,6 @@ if __name__ == "__main__":
         
         boundary_patch.set_xy(new_coords)
         
-        # 2. Dibujamos las partículas en sus posiciones correspondientes
         circle_idx = 0
         for i in range(N):
             if circle_idx < MAX_CIRCLES:

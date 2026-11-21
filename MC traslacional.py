@@ -15,7 +15,7 @@ R = D / 2.0                               # Radio de las partículas
 N = 50                                    # Número de partículas
   
 MAX_DISP = 0.1                            # desplazamiento máximo          
-GAMMA = 1e-7                              # esfera de influencia (pequeño porque todavía no tengo compresión)
+GAMMA = 1e-12                              # esfera de influencia para proteger contra solapamientos numéricos pequeños y evitar imprecisiones numéricas al usar el fastmath de numba
 D_EFF = D + GAMMA                         # diámetro efectivo
 
 if TOPOLOGY == 0:
@@ -190,7 +190,6 @@ def mc_step(x, y, L, D_eff, max_disp, head, next_node, ncx, ncy, topology):
 
 
 # simulaicón
-
 if __name__ == "__main__":
     print(f"Inicializando...")
     
@@ -212,13 +211,11 @@ if __name__ == "__main__":
         acc = mc_step(x_pos, y_pos, L, D_EFF, MAX_DISP, head, next_node, NCX, NCY, TOPOLOGY)
         total_acc += acc
         
-        # Guardamos un fotograma en la matriz cada X pasos
         if step % STEPS_PER_FRAME == 0:
             trayectoria[frame_idx, :, 0] = x_pos
             trayectoria[frame_idx, :, 1] = y_pos
             frame_idx += 1
             
-        # Log en la terminal
         if (step + 1) % (MC_STEPS // 5) == 0:
             elapsed = time.time() - t_start
             avg_acc = (total_acc / (step + 1)) * 100
@@ -251,10 +248,8 @@ if __name__ == "__main__":
                            (2*L,4*L), (L,4*L), (L,2*L), (0,2*L), (0,L), (L,L)]     
         
         
-    # Activamos la cuadrícula con un estilo suave de fondo
     ax.grid(True, linestyle='--', color='gray', alpha=0.5, zorder=0)
         
-    # Resaltamos el origen (X=0, Y=0) para tener una referencia espacial clara
     ax.axhline(0, color='gray', linewidth=1.0, zorder=1)
     ax.axvline(0, color='gray', linewidth=1.0, zorder=1)                 
                            
@@ -272,18 +267,15 @@ if __name__ == "__main__":
         return circles
 
     def update(frame):
-        # 1. Recuperamos las coordenadas guardadas de este fotograma exacto
         frame_x = trayectoria[frame, :, 0]
         frame_y = trayectoria[frame, :, 1]
         
-        # 2. Dibujamos solo recuperando datos (¡Sin calcular física!)
         circle_idx = 0
         for i in range(N):
             if circle_idx < MAX_CIRCLES:
                 circles[circle_idx].center = (frame_x[i], frame_y[i])
                 circle_idx += 1
                 
-            # Calculamos fantasmas solo para la vista
             ghosts = get_ghosts(frame_x[i], frame_y[i], L, R, TOPOLOGY) 
             for j in range(8):
                 gx, gy = ghosts[j]
