@@ -11,7 +11,7 @@ import time
 TOPOLOGY = 1                              # 0: cuadrado simple, 1: topología del cubo
 D = 1                                     # diámetro de las partículas
 R = D / 2.0                               # radio de las partículas
-N = 1000                                    # número de partículas
+N = 500                                    # número de partículas
 
 phi_init= 0.1                                 # fracción de área inicial
 area_particulas = N * np.pi * R**2
