@@ -202,3 +202,63 @@ def compression(x, y, L, D_eff, shrink_factor, head, next_node, ncx, ncy, topolo
         return L, False 
         
     return new_L, True  
+
+
+# distancia
+
+
+@njit(fastmath=True, boundscheck=False, cache=True)
+def dist_g(x1, y1, x2, y2, L, topology):
+    
+    if topology == 0:
+        # Convención de mínima imagen para el plano
+        dx=abs(x1-x2)
+        dy=abs(y1-y2)
+        
+        if dx > 0.5 * L: dx = L - dx
+        if dy > 0.5 * L: dy = L - dy
+        
+        return np.sqrt(dx**2 + dy**2)
+    
+    if topology == 1:
+     min_d2 = (x1 - x2)**2 + (y1 - y2)**2 
+    
+     # 4 - 1 
+     d2 = (x1 - x2)**2 + (y1 - (y2 - 4*L))**2
+     if d2 < min_d2: min_d2 = d2
+     d2 = (x1 - x2)**2 + (y1 - (y2 + 4*L))**2
+     if d2 < min_d2: min_d2 = d2
+        
+     # 5 - 1 
+     d2 = (x1 - (2*L - y2))**2 + (y1 - x2)**2
+     if d2 < min_d2: min_d2 = d2
+     d2 = (x1 - y2)**2 + (y1 - (2*L - x2))**2
+     if d2 < min_d2: min_d2 = d2
+        
+     # 6 - 1 
+     d2 = (x1 - (L + y2))**2 + (y1 - (3*L - x2))**2
+     if d2 < min_d2: min_d2 = d2
+     d2 = (x1 - (3*L - y2))**2 + (y1 - (x2 - L))**2
+     if d2 < min_d2: min_d2 = d2
+        
+     # 3 - 5 
+     d2 = (x1 - (3*L - y2))**2 + (y1 - (L + x2))**2
+     if d2 < min_d2: min_d2 = d2
+     d2 = (x1 - (y2 - L))**2 + (y1 - (3*L - x2))**2
+     if d2 < min_d2: min_d2 = d2
+        
+     # 3 - 6 
+     d2 = (x1 - y2)**2 + (y1 - (4*L - x2))**2
+     if d2 < min_d2: min_d2 = d2
+     d2 = (x1 - (4*L - y2))**2 + (y1 - x2)**2
+     if d2 < min_d2: min_d2 = d2
+        
+     # 4 - 5 
+     d2 = (x1 - (L - x2))**2 + (y1 - (5*L - y2))**2
+     if d2 < min_d2: min_d2 = d2
+        
+     # 4 - 6 
+     d2 = (x1 - (5*L - x2))**2 + (y1 - (5*L - y2))**2
+     if d2 < min_d2: min_d2 = d2
+        
+    return np.sqrt(min_d2)

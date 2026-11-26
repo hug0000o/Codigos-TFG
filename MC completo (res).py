@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Polygon
 import time
-import modulo_tfg as mtfg
+import modulo_motor as mm
 
 #parámetros
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     next_node = np.full(N, -1, dtype=np.int32)
     
     t_start = time.time()
-    mtfg.init_system(x_pos, y_pos, L, D_EFF, head, next_node, NCX, NCY, TOPOLOGY)
+    mm.init_system(x_pos, y_pos, L, D_EFF, head, next_node, NCX, NCY, TOPOLOGY)
     print(f"Inicialización RSA completada. Comenzando simulación con máximo de {MC_STEPS} pasos MC)...")
     
     acc = 1.0
@@ -77,7 +77,7 @@ if __name__ == "__main__":
         
         if step % COMPRESS_EVERY == 0:
             shrink = 1.0 - delta_s
-            L, accepted = mtfg.compression(x_pos, y_pos, L, D_EFF, shrink, head, next_node, NCX, NCY, TOPOLOGY)
+            L, accepted = mm.compression(x_pos, y_pos, L, D_EFF, shrink, head, next_node, NCX, NCY, TOPOLOGY)
             
             if accepted:
                 reject_streak = 0
@@ -87,22 +87,22 @@ if __name__ == "__main__":
                     delta_s *= 0.5
                     reject_streak = 0
                     if delta_s < TOL_SHRINK:
-                        phi_actual = area_particulas / mtfg.get_area(L, TOPOLOGY)
+                        phi_actual = area_particulas / mm.get_area(L, TOPOLOGY)
                         print(f"\nJamming alcanzado:")
                         print(f"Paso: {step+1} | delta_s: {delta_s:.2e} < {TOL_SHRINK:.1e}")
                         break
 
         
-        acc = mtfg.mc_step(x_pos, y_pos, L, D_EFF, MAX_DISP, head, next_node, NCX, NCY, TOPOLOGY)
+        acc = mm.mc_step(x_pos, y_pos, L, D_EFF, MAX_DISP, head, next_node, NCX, NCY, TOPOLOGY)
         
         
         if (step + 1) % imp_steps == 0:
             elapsed = time.time() - t_start
-            phi_actual = area_particulas / mtfg.get_area(L, TOPOLOGY)
+            phi_actual = area_particulas / mm.get_area(L, TOPOLOGY)
             print(f"Progreso: {step+1}/{MC_STEPS} | ϕ: {phi_actual:.4f} | L: {L:.4f} | Acc: {acc*100:.1f}% | Disp: {MAX_DISP:.2e} | dS: {delta_s:.1e} | T: {elapsed:.1f} s")
     
     t_end = time.time()
-    phi_final = area_particulas / mtfg.get_area(L, TOPOLOGY)
+    phi_final = area_particulas / mm.get_area(L, TOPOLOGY)
     
     print(f"\nSimulación finalizada:")
     print(f"Número de Partículas: {N}")
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         c.set_clip_path(boundary_patch)
         ax.add_patch(c)
         
-        ghosts = mtfg.get_ghosts(x_pos[i], y_pos[i], L, R, TOPOLOGY)
+        ghosts = mm.get_ghosts(x_pos[i], y_pos[i], L, R, TOPOLOGY)
         for j in range(8):
             gx, gy = ghosts[j]
             if gx != -100.0:
